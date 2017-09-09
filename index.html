@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<head>
+	<meta charset="utf-8">
+	<title>Device Motion</title>
+	<meta name="description" content="device motion detecting using paper.js">
+	<meta property="og:type" content="website">
+	<meta property="og:url" content="http://leebh.net/lab/tilt/index.html">
+	<meta property="og:title" content="모바일센서를 연동한 paper.js">
+	<meta property="og:description" content="mobile tilt using paper.js">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0"/>
+
+	<script type="text/javascript" src="https://hknudesign.kr/js/paper.js"></script>
+
+	<script>
+	//모바일폰에 맞게 최대화 화면이 잘 안맞으면 이 부분 삭제.
+	window.onload=function(){
+		myCanvas.setAttribute("width",viewW + "px");
+		myCanvas.setAttribute("height",viewH + "px");
+	}
+	var viewW = window.innerWidth;
+	var viewH = window.innerHeight;
+
+	//센서를 감지하는 이벤트 핸들러를 붙인다. 모바일인 경우 모션을 감지하는 센서를 통해 세 가지의 값을 지속적으로 검출할 수 있다. 좌우기울기, 앞뒤기울기, 그리고 방위(컴파스)다. 쓰기 편하게 그냥 전역변수에 tiltLR, tiltBF, dirAngle 로 세 가지 값을 지속적을 업데이트하고, 다른 함수에서 값을 가져다 쓴다.
+	var tiltLR, tiltBF, dirAngle;
+	window.addEventListener('deviceorientation', 
+		function(eventData) {
+			tiltLR = eventData.gamma;
+			tiltBF = eventData.beta;
+			dirAngle = eventData.alpha;
+		}, false);
+	</script>
+
+	<!--여기가 paper.js 스크립트 -->
+	<script type="text/paperscript" canvas="myCanvas">
+	var originPoint = new Point(viewW/2, viewH/2);
+	var amount = 25;
+	var colors = ['red', 'white', 'blue', 'white'];
+
+	for (var i = 0; i < amount; i++) {
+		var rect = new Rectangle([0, 0], [25, 25]);
+		rect.center = originPoint;
+		var path = new Path.Rectangle(rect, 6);
+		path.fillColor = colors[i % 4];
+		var scale = (1 - i / amount) * 20;
+		path.scale(scale);
+	}
+
+	var children = project.activeLayer.children;
+	
+	function onFrame(event) {
+		originPoint+= new Point(tiltLR/10, tiltBF/10);
+		for (var i = 0, l = children.length; i < l; i++) {
+			var item = children[i];
+			var delta = (originPoint - item.position) / (i + 5);
+			item.rotate(Math.sin((event.count + i) / 10) * 7);
+			if (delta.length > 0.1)
+				item.position += delta;
+		}
+	}
+
+	</script>
+</head>
+<body style="margin:0;padding:0">
+	<canvas id="myCanvas" resize></canvas>
+</body>
